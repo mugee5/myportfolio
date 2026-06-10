@@ -190,9 +190,10 @@ nav.scrolled{padding:1.1rem 3rem;}
   width:100%;height:100%;
   /* Canvas sits on top — pointer-events enabled so drag/hover works everywhere */
   z-index:5;
-  /* touch-action:none tells browser we handle all touch gestures ourselves,
-     removing the 300ms tap delay and preventing scroll/drag conflicts on iOS */
-  touch-action:none;
+  /* touch-action:pan-y — vertical scroll passes through to the page normally.
+     The browser only intercepts horizontal swipes, which rotate the desk.
+     This prevents the canvas from trapping the user's scroll gesture. */
+  touch-action:pan-y;
 }
 
 /* Film grain */
@@ -876,7 +877,8 @@ section{padding:9rem 3rem;max-width:1200px;margin:0 auto;}
   .currently-grid{grid-template-columns:1fr;}
   .hero-headline{font-size:clamp(2.2rem,9vw,3rem);}
   .interact-hint{display:none;}
-  .scroll-hint{opacity:0!important;pointer-events:none;}
+  /* scroll-hint intentionally visible on mobile — lets users know to scroll */
+  .scroll-hint{pointer-events:none;}
   .cta-actions{flex-direction:column;align-items:flex-start;}
   /* Tighter hero on mobile — dvh tracks real visible area on iOS */
   #hero{height:100vh;min-height:560px;height:100dvh;}
@@ -2974,30 +2976,32 @@ footerObs.observe(document.getElementById('footer-cta'));
     autoTimer = setTimeout(() => { autoRotate = true; }, 4500);
   });
 
-  /* ─── TOUCH DRAG SUPPORT (mobile) ───────────────────── */
-  let touchStartX = 0, touchStartY = 0, lastTouchX = 0;
+  /* ─── TOUCH DRAG SUPPORT (mobile) ───────────────────── *
+   * touch-action:pan-y on the canvas means the browser owns
+   * vertical scrolling — we never see vertical touchmove events.
+   * We only handle horizontal swipes here to rotate the desk.
+   * All listeners passive:true — vertical scroll flows freely.
+   */
+  let touchStartX = 0, lastTouchX = 0;
   canvas.addEventListener('touchstart', e => {
     if (e.touches.length === 1) {
       touchStartX = lastTouchX = e.touches[0].clientX;
-      touchStartY = e.touches[0].clientY;
       isDragging = true; autoRotate = false; clearTimeout(autoTimer);
       rotVelY = 0;
-      e.preventDefault();
     }
-  }, { passive: false });
+  }, { passive: true });
   canvas.addEventListener('touchmove', e => {
     if (e.touches.length === 1 && isDragging) {
       const dx = e.touches[0].clientX - lastTouchX;
       rotVelY     = dx * 0.009;
       targetRotY += dx * 0.007;
       lastTouchX  = e.touches[0].clientX;
-      e.preventDefault();
     }
-  }, { passive: false });
+  }, { passive: true });
   canvas.addEventListener('touchend', () => {
     isDragging = false;
     autoTimer = setTimeout(() => { autoRotate = true; }, 4500);
-  });
+  }, { passive: true });
 
   // Click pulse
   const clickPulses = new Map();
