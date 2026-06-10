@@ -2,10 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#FAF8F4">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Abdul Mugees — Building things that help ideas move.</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet"></noscript>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
@@ -176,6 +180,7 @@ nav.scrolled{padding:1.1rem 3rem;}
 #hero{
   position:relative;
   height:100vh;min-height:760px;
+  height:100dvh;min-height:760px; /* dvh = real visible height on iOS, overrides above */
   display:flex;flex-direction:column;
   align-items:center;justify-content:flex-start;
   overflow:hidden;
@@ -185,6 +190,9 @@ nav.scrolled{padding:1.1rem 3rem;}
   width:100%;height:100%;
   /* Canvas sits on top — pointer-events enabled so drag/hover works everywhere */
   z-index:5;
+  /* touch-action:none tells browser we handle all touch gestures ourselves,
+     removing the 300ms tap delay and preventing scroll/drag conflicts on iOS */
+  touch-action:none;
 }
 
 /* Film grain */
@@ -473,6 +481,12 @@ section{padding:9rem 3rem;max-width:1200px;margin:0 auto;}
   filter:grayscale(0);
 }
 .curiosity-card:hover .c-icon{transform:scale(1.2) rotate(-5deg);}
+@media(hover:none){
+  /* Touch devices — disable hover states that can get stuck on tap */
+  .curiosity-card::before{display:none;}
+  .exp-card:hover{background:#0D0D0D;}
+  .exp-card:hover .exp-highlight{background:none;}
+}
 .c-num{
   font-family:var(--font-mono);font-size:.62rem;
   color:var(--ink-muted);margin-bottom:1.8rem;
@@ -620,6 +634,7 @@ section{padding:9rem 3rem;max-width:1200px;margin:0 auto;}
   display:flex;gap:3rem;white-space:nowrap;
   animation:marquee 40s linear infinite;
   width:max-content;
+  will-change:transform;
 }
 .marquee-track:hover{animation-play-state:paused;}
 @keyframes marquee{from{transform:translateX(0);}to{transform:translateX(-50%);}}
@@ -762,8 +777,9 @@ section{padding:9rem 3rem;max-width:1200px;margin:0 auto;}
 .reveal{
   opacity:0;transform:translateY(32px);
   transition:opacity .85s var(--ease-smooth),transform .85s var(--ease-smooth);
+  will-change:opacity,transform;
 }
-.reveal.visible{opacity:1;transform:none;}
+.reveal.visible{opacity:1;transform:none;will-change:auto;}
 .reveal-left{
   opacity:0;transform:translateX(-24px);
   transition:opacity .85s var(--ease-smooth),transform .85s var(--ease-smooth);
@@ -774,20 +790,116 @@ section{padding:9rem 3rem;max-width:1200px;margin:0 auto;}
 .magnetic{transition:transform .5s var(--ease-spring);}
 
 /* ─── MOBILE ─────────────────────────────── */
+
+/* Hamburger button — hidden on desktop */
+.nav-hamburger{
+  display:none;
+  flex-direction:column;justify-content:center;align-items:center;
+  gap:5px;
+  background:none;border:none;padding:.4rem;
+  cursor:pointer;
+  position:relative;z-index:2;
+  width:36px;height:36px;
+}
+.nav-hamburger span{
+  display:block;width:22px;height:1.5px;
+  background:var(--ink);
+  transition:transform .3s var(--ease-smooth),opacity .2s;
+  transform-origin:center;
+}
+.nav-hamburger.open span:nth-child(1){transform:translateY(6.5px) rotate(45deg);}
+.nav-hamburger.open span:nth-child(2){opacity:0;transform:scaleX(0);}
+.nav-hamburger.open span:nth-child(3){transform:translateY(-6.5px) rotate(-45deg);}
+
+/* Mobile menu drawer */
+.mobile-menu{
+  display:none;
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  background:var(--cream);
+  z-index:490;
+  flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:2.4rem;
+  opacity:0;
+  transition:opacity .35s var(--ease-smooth);
+  pointer-events:none;
+}
+.mobile-menu.open{
+  opacity:1;
+  pointer-events:all;
+}
+.mobile-menu .m-link{
+  font-family:var(--font-serif);
+  font-size:2.2rem;
+  color:var(--ink);
+  text-decoration:none;
+  letter-spacing:-.02em;
+  transition:color .2s;
+}
+.mobile-menu .m-link:hover{color:var(--tangerine);}
+.mobile-menu .m-resume{
+  font-family:var(--font-mono);
+  font-size:.72rem;
+  font-weight:500;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--cream);
+  background:var(--ink);
+  border:none;
+  border-radius:100px;
+  padding:.75rem 2.2rem;
+  text-decoration:none;
+  display:inline-flex;align-items:center;gap:.4rem;
+  margin-top:.8rem;
+  cursor:pointer;
+}
+
 @media(max-width:768px){
-  nav{padding:1.2rem 1.5rem;}
+  /* Nav: logo left, hamburger right */
+  nav{
+    padding:1.2rem 1.5rem;
+    grid-template-columns:1fr auto;
+  }
   nav.scrolled{padding:.9rem 1.5rem;}
+  .nav-center{display:none;}
+  .nav-right{display:none;}
+  .nav-hamburger{display:flex;}
+
+  /* Mobile menu visible */
+  .mobile-menu{display:flex;}
+
   section{padding:5.5rem 1.5rem;}
   #footer-cta{padding:8rem 1.5rem 5rem;}
-  .curiosity-grid{grid-template-columns:1fr 1fr;}
+  .curiosity-grid{grid-template-columns:1fr;}
   .exp-grid{grid-template-columns:1fr;}
   .footer-cols{grid-template-columns:1fr;}
   .currently-grid{grid-template-columns:1fr;}
-  .hero-headline{font-size:2.7rem;}
+  .hero-headline{font-size:clamp(2.2rem,9vw,3rem);}
   .interact-hint{display:none;}
+  .scroll-hint{opacity:0!important;pointer-events:none;}
   .cta-actions{flex-direction:column;align-items:flex-start;}
-  #hero{height:140vh;min-height:820px;}
-  .hero-lower{padding-bottom:5rem;}
+  /* Tighter hero on mobile — dvh tracks real visible area on iOS */
+  #hero{height:100vh;min-height:560px;height:100dvh;}
+  .hero-lower{padding-bottom:4rem;}
+  .hero-sub{font-size:.95rem;}
+  /* Curiosity cards full-width on small screens */
+  .curiosity-card{padding:2rem 1.6rem;}
+  /* Principle text smaller on mobile */
+  .principle-text{font-size:clamp(1.6rem,6vw,2.8rem);}
+  /* Disable film grain on mobile for perf */
+  #hero::before{display:none;}
+  /* Disable custom cursor on touch */
+  body,a,button,.curiosity-card,.exp-card,.resume-btn,.btn-primary,.btn-ghost,.magnetic{
+    cursor:auto!important;
+  }
+}
+
+@media(max-width:480px){
+  nav{padding:1rem 1.2rem;}
+  section{padding:4.5rem 1.2rem;}
+  .hero-headline{font-size:clamp(2rem,8.5vw,2.6rem);}
+  .section-heading{font-size:clamp(1.8rem,7vw,2.8rem);}
+  .hero-btns{flex-direction:column;gap:1.2rem;}
 }
 </style>
 </head>
@@ -891,7 +1003,19 @@ m119 -36 c13 -12 23 -30 23 -40 0 -16 -9 -18 -80 -18 -90 0 -100 11 -55 55 31
     <a href="#footer-cta" class="nav-link">Contact</a>
     <a href="#" onclick="openResume();return false;" class="resume-btn magnetic" id="resume-btn"><span>Resume ↓</span></a>
   </div>
+  <!-- Hamburger — mobile only -->
+  <button class="nav-hamburger" id="nav-hamburger" aria-label="Open menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
 </nav>
+
+<!-- Mobile drawer menu -->
+<div class="mobile-menu" id="mobile-menu" role="dialog" aria-modal="true" aria-label="Navigation">
+  <a href="#curiosity" class="m-link" onclick="closeMobileMenu()">Curiosity</a>
+  <a href="#experiments" class="m-link" onclick="closeMobileMenu()">Work</a>
+  <a href="#footer-cta" class="m-link" onclick="closeMobileMenu()">Contact</a>
+  <a href="#" onclick="openResume();closeMobileMenu();return false;" class="m-resume">Resume ↓</a>
+</div>
 
 <!-- HERO — eyebrow + headline overlay the canvas -->
 <section id="hero">
@@ -1223,6 +1347,37 @@ window.addEventListener('scroll', () => {
   if (sh) sh.style.opacity = window.scrollY > 80 ? '0' : '';
 }, { passive: true });
 
+// Mobile menu
+const _hamburger = document.getElementById('nav-hamburger');
+const _mobileMenu = document.getElementById('mobile-menu');
+function closeMobileMenu() {
+  _hamburger.classList.remove('open');
+  _hamburger.setAttribute('aria-expanded','false');
+  _mobileMenu.classList.remove('open');
+  document.body.style.overflow  = '';
+  document.body.style.position  = '';
+  document.body.style.width     = '';
+}
+if (_hamburger) {
+  _hamburger.addEventListener('click', () => {
+    const isOpen = _hamburger.classList.toggle('open');
+    _hamburger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    _mobileMenu.classList.toggle('open', isOpen);
+    // iOS Safari needs position:fixed to truly lock scroll behind the drawer
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width    = '100%';
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width    = '';
+    }
+  });
+}
+// Close on Escape
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMobileMenu(); });
+
 // Paper plane disabled — logo is static
 
 // ============================================================
@@ -1250,7 +1405,18 @@ document.querySelectorAll('.reveal,.reveal-left,.section-label').forEach((el, i)
 // STARS (footer)
 // ============================================================
 const starsContainer = document.getElementById('stars');
-for (let i = 0; i < 90; i++) {
+// Star count matched to device tier (set later after 3D init, but
+// we approximate here using the same signals)
+// Mirror the main tier detection for stars (runs before 3D init)
+const _starMobile = window.matchMedia('(max-width:768px)').matches
+                 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+const _starCores  = navigator.hardwareConcurrency || 4;
+const _starDpr    = window.devicePixelRatio || 1;
+const _starTier   = _starMobile
+  ? (_starCores >= 6 && _starDpr >= 2 ? 1 : 0)
+  : (_starCores >= 8 ? 3 : 2);
+const _starCount = [15, 40, 45, 90][_starTier];
+for (let i = 0; i < _starCount; i++) {
   const s = document.createElement('div');
   s.className = 'star';
   s.style.left = Math.random() * 100 + 'vw';
@@ -1308,18 +1474,128 @@ footerObs.observe(document.getElementById('footer-cta'));
   styleEl.textContent = tStyle;
   document.head.appendChild(styleEl);
 
+  /* ═══════════════════════════════════════════════════════
+     ADAPTIVE QUALITY SYSTEM  v3
+     ─────────────────────────────────────────────────────
+     Four tiers — mobile gets its own two sub-tiers so even
+     a 2018 Android looks good, not PS1.
+
+     TIER 3 — Desktop High  : discrete GPU, 8+ cores
+     TIER 2 — Desktop Mid   : laptops, M-series, integrated GPU
+     TIER 1 — Mobile High   : iPhone 11+, flagship Android 2020+
+     TIER 0 — Mobile Base   : everything else — still looks great
+
+     Key principle: the BASE tier must never look broken.
+     Every tier has shadows on, fill lights on, DPR ≥ 1.5.
+     Differences are in resolution and particle counts, not
+     fundamental visual quality.
+
+     FPS sampler runs for 2.5s and can drop Mobile High → Base.
+     It never drops below Base — that's the floor.
+     ═══════════════════════════════════════════════════════ */
+  const isMobile = window.matchMedia('(max-width:768px)').matches
+                || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+  const cores = navigator.hardwareConcurrency || 4;
+  const ram   = navigator.deviceMemory        || 4; // Safari returns undefined
+  const dpr   = window.devicePixelRatio       || 1;
+
+  // Integrated GPU signal: Apple Silicon / most laptops share GPU memory.
+  // Safari never exposes deviceMemory; Chrome caps it at 4GB regardless of real RAM.
+  // DPR≥2 + ram==4 (the API cap) on a non-mobile is the M-series fingerprint.
+  const likelyIntegrated = (typeof navigator.deviceMemory === 'undefined')
+                         || (ram <= 4 && dpr >= 2);
+
+  // Mobile capability signal: newer phones (2020+) have DPR≥2, 6+ cores.
+  // Covers: iPhone 11+, Pixel 4+, Samsung S20+, OnePlus 8+, Redmi Note 10+ etc.
+  const mobileCapable = isMobile && cores >= 6 && dpr >= 2;
+
+  // Assign tier
+  let tier; // 0=mobile-base 1=mobile-high 2=desktop-mid 3=desktop-high
+  if (prefersReduced) {
+    tier = isMobile ? 0 : 1; // always respect reduced motion, but keep desktop at mid
+  } else if (isMobile) {
+    tier = mobileCapable ? 1 : 0;
+  } else if (cores >= 8 && !likelyIntegrated) {
+    tier = 3; // desktop with discrete GPU
+  } else {
+    tier = 2; // laptop / M-series / integrated GPU
+  }
+
+  /*
+    PER-TIER SETTINGS
+    ─────────────────────────────────────────────────────────────
+                        T0-MobBase T1-MobHigh T2-DeskMid T3-DeskHigh
+    pixelRatio             1.5        1.75       1.5        1.5
+    shadowMapSize          512        512        1024       1024
+    shadows                ON         ON         ON         ON    ← shadows always on
+    antialias              false      true       true       true
+    fill/rim lights        reduced    full       full       full  ← lights always on
+    dustCount              0          20         30         80
+    introDuration (s)      3.2        4.5        5.8        5.8
+    autoRotSpeed           0.0005     0.0007     0.0008     0.00095
+    ─────────────────────────────────────────────────────────────
+    DPR capped at 1.5 everywhere — beyond that is wasted pixels.
+    Shadow maps capped at 1024 — 1024→2048 is invisible on a desk scene.
+  */
+  const Q = {
+    pixelRatio:    [1.5,    1.75,   1.5,    Math.min(dpr, 1.5)],
+    shadowMapSize: [512,    512,    1024,   1024],
+    antialias:     [false,  true,   true,   true],
+    dustCount:     [0,      20,     30,     80],
+    starCount:     [15,     40,     45,     90],
+    introDuration: [3.2,    4.5,    5.8,    5.8],
+    autoRotSpeed:  [0.0005, 0.0007, 0.0008, 0.00095],
+    // Light intensity multipliers — base gets reduced but never zero
+    fillIntensity: [0.22,   0.38,   0.38,   0.38],
+    rimIntensity:  [0.18,   0.32,   0.32,   0.32],
+    warmIntensity: [0.30,   0.45,   0.55,   0.55],
+    ambientBoost:  [0.68,   0.58,   0.52,   0.52], // base gets more ambient to compensate
+  };
+
+  // FPS sampler — 2.5s window, only drops Mobile High → Mobile Base.
+  // Desktop tiers never auto-degrade (they were correctly detected).
+  // Floor is tier 0 — we never go below it.
+  let fpsSampleFrames = 0, fpsSampleTime = 0, fpsAdaptDone = false;
+  function adaptFPS(dt) {
+    if (fpsAdaptDone || tier < 1) return; // already at base or sampler done
+    fpsSampleFrames++;
+    fpsSampleTime += dt;
+    if (fpsSampleTime >= 2.5) {
+      fpsAdaptDone = true;
+      const avgFPS = fpsSampleFrames / fpsSampleTime;
+      if (avgFPS < 48 && tier === 1) {
+        // Drop Mobile High → Mobile Base
+        tier = 0;
+        renderer.setPixelRatio(Q.pixelRatio[0]);
+        dustMt.opacity = 0;
+        // Reduce lights to base levels
+        warmPt.intensity = Q.warmIntensity[0];
+        rimPt.intensity  = Q.rimIntensity[0];
+        fill.intensity   = Q.fillIntensity[0];
+      }
+    }
+  }
+
   /* ─── RENDERER ─────────────────────────────────────────── */
-  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  const renderer = new THREE.WebGLRenderer({
+    canvas,
+    alpha: true,
+    antialias: Q.antialias[tier],
+    powerPreference: tier >= 3 ? 'high-performance' : 'default',
+  });
+  renderer.setPixelRatio(Q.pixelRatio[tier]);
   renderer.setClearColor(0x000000, 0);
-  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.enabled = true; // always on — shadows on every tier
   renderer.shadowMap.type    = THREE.PCFSoftShadowMap;
   renderer.toneMapping       = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.12;
 
+  // Tab hidden + canvas off-screen: handled inside animate() loop
+
   /* ─── SCENE + FOG ──────────────────────────────────────── */
   const scene = new THREE.Scene();
-  scene.fog   = new THREE.FogExp2(0xF4F0EA, 0.013);
+  scene.fog   = new THREE.FogExp2(0xF4F0EA, tier <= 1 ? 0.016 : 0.013);
 
   /* ─── CAMERA — cinematic pan sequence ──────────────────── */
   const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 220);
@@ -1328,7 +1604,7 @@ footerObs.observe(document.getElementById('footer-cta'));
   camera.lookAt(2.0, 1.8, 0);
 
   /* ─── LIGHTING — dramatic workshop illumination ────────── */
-  scene.add(new THREE.AmbientLight(0xFFF8F0, 0.52));
+  scene.add(new THREE.AmbientLight(0xFFF8F0, Q.ambientBoost[tier]));
 
   // Hemisphere for soft sky/ground gradient light
   const hemi = new THREE.HemisphereLight(0xFFF8E8, 0x8899AA, 0.34);
@@ -1336,9 +1612,9 @@ footerObs.observe(document.getElementById('footer-cta'));
 
   const sun = new THREE.DirectionalLight(0xFFF0DC, 2.6);
   sun.position.set(8, 16, 6);
-  sun.castShadow = true;
-  sun.shadow.mapSize.width  = 4096;
-  sun.shadow.mapSize.height = 4096;
+  sun.castShadow = true; // always on
+  sun.shadow.mapSize.width  = Q.shadowMapSize[tier];
+  sun.shadow.mapSize.height = Q.shadowMapSize[tier];
   sun.shadow.camera.near    = 0.5;
   sun.shadow.camera.far     = 80;
   sun.shadow.camera.left    = -9;
@@ -1348,7 +1624,7 @@ footerObs.observe(document.getElementById('footer-cta'));
   sun.shadow.bias           = -0.001;
   scene.add(sun);
 
-  const fill = new THREE.DirectionalLight(0xC6DCFF, 0.38);
+  const fill = new THREE.DirectionalLight(0xC6DCFF, Q.fillIntensity[tier]);
   fill.position.set(-7, 4, -5);
   scene.add(fill);
 
@@ -1361,12 +1637,12 @@ footerObs.observe(document.getElementById('footer-cta'));
   monitorGlow.position.set(-0.55, 1.20, 0.55);
   scene.add(monitorGlow);
 
-  const warmPt = new THREE.PointLight(0xFF9944, 0.55, 10, 2);
+  // All lights on at every tier — intensity varies, never zero
+  const warmPt = new THREE.PointLight(0xFF9944, Q.warmIntensity[tier], 10, 2);
   warmPt.position.set(-2.5, 3, 2);
   scene.add(warmPt);
 
-  // Rim light from behind
-  const rimPt = new THREE.PointLight(0xFFDDB0, 0.32, 14, 2);
+  const rimPt = new THREE.PointLight(0xFFDDB0, Q.rimIntensity[tier], 14, 2);
   rimPt.position.set(3, 6, -4);
   scene.add(rimPt);
 
@@ -2565,16 +2841,19 @@ footerObs.observe(document.getElementById('footer-cta'));
   const maquette  = buildMaquette  ( 1.45, -0.15, -0.22);
 
   /* ─── PARTICLES — dust motes + fireflies ─────────────── */
+  const _dustN = Q.dustCount[tier];
   const dustGeo = new THREE.BufferGeometry();
-  const dustPts = new Float32Array(80 * 3);
-  for (let i = 0; i < 80; i++) {
+  const dustPts = new Float32Array(Math.max(_dustN, 1) * 3);
+  for (let i = 0; i < Math.max(_dustN, 1); i++) {
     dustPts[i*3]   = (Math.random()-0.5)*12;
     dustPts[i*3+1] = Math.random()*6 + 0.3;
     dustPts[i*3+2] = (Math.random()-0.5)*12;
   }
   dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPts, 3));
   const dustMt = new THREE.PointsMaterial({
-    color:0xFFE8A0, size:0.02, transparent:true, opacity:0.14, sizeAttenuation:true
+    color:0xFFE8A0, size:0.02, transparent:true,
+    opacity: _dustN === 0 ? 0 : 0.14,
+    sizeAttenuation:true
   });
   const dust = new THREE.Points(dustGeo, dustMt);
   world.add(dust);
@@ -2610,7 +2889,7 @@ footerObs.observe(document.getElementById('footer-cta'));
    *   mark 3 : final resting hero framing  (hands off to parallax)
    */
   let introDone = false;
-  const introDuration = 5.8;
+  const introDuration = Q.introDuration[tier];
 
   // Positions the camera travels through
   const camCurve = new THREE.CatmullRomCurve3([
@@ -2695,6 +2974,31 @@ footerObs.observe(document.getElementById('footer-cta'));
     autoTimer = setTimeout(() => { autoRotate = true; }, 4500);
   });
 
+  /* ─── TOUCH DRAG SUPPORT (mobile) ───────────────────── */
+  let touchStartX = 0, touchStartY = 0, lastTouchX = 0;
+  canvas.addEventListener('touchstart', e => {
+    if (e.touches.length === 1) {
+      touchStartX = lastTouchX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      isDragging = true; autoRotate = false; clearTimeout(autoTimer);
+      rotVelY = 0;
+      e.preventDefault();
+    }
+  }, { passive: false });
+  canvas.addEventListener('touchmove', e => {
+    if (e.touches.length === 1 && isDragging) {
+      const dx = e.touches[0].clientX - lastTouchX;
+      rotVelY     = dx * 0.009;
+      targetRotY += dx * 0.007;
+      lastTouchX  = e.touches[0].clientX;
+      e.preventDefault();
+    }
+  }, { passive: false });
+  canvas.addEventListener('touchend', () => {
+    isDragging = false;
+    autoTimer = setTimeout(() => { autoRotate = true; }, 4500);
+  });
+
   // Click pulse
   const clickPulses = new Map();
   canvas.addEventListener('click', () => {
@@ -2752,14 +3056,24 @@ footerObs.observe(document.getElementById('footer-cta'));
   // Monitor screen pulse — textures animate
   let cursorBlink = 0;
 
+  /* ─── CANVAS VISIBILITY — pause when scrolled away ──── */
+  let canvasVisible = true;
+  const canvasObs = new IntersectionObserver(entries => {
+    canvasVisible = entries[0].isIntersecting;
+  }, { threshold: 0 });
+  canvasObs.observe(canvas);
+
   /* ─── RENDER LOOP ────────────────────────────────────── */
   function animate() {
     requestAnimationFrame(animate);
+    // Skip render entirely when tab hidden or canvas off-screen
+    if (document.hidden || !canvasVisible) return;
     const now = performance.now();
     clock = (now - T0) / 1000;
     // delta-time in seconds, clamped so tab-switches / hitches don't jump
     const dt = Math.min((now - lastFrame) / 1000, 0.05);
     lastFrame = now;
+    adaptFPS(dt);
 
     /* ── Cinematic intro camera path ────────────────────── *
      * One continuous glide along the spline. Each leg eases in/out
@@ -2815,7 +3129,7 @@ footerObs.observe(document.getElementById('footer-cta'));
       worldRotY += (targetRotY - worldRotY) * damp(0.14, dt);
     } else if (autoRotate) {
       rotVelY   *= Math.pow(0.95, dtScale);
-      targetRotY += 0.00095 * dtScale;
+      targetRotY += Q.autoRotSpeed[tier] * dtScale;
       worldRotY  += (targetRotY - worldRotY) * damp(0.018, dt) + rotVelY * 0.08 * dtScale;
     } else {
       rotVelY   *= Math.pow(0.91, dtScale);
@@ -2897,11 +3211,17 @@ footerObs.observe(document.getElementById('footer-cta'));
     });
     toDelete.forEach(k => clickPulses.delete(k));
 
-    /* ── Ambient ────────────────────────────────────────── */
-    dust.rotation.y  = clock * 0.004;
-    dustMt.opacity   = 0.10 + Math.sin(clock * 0.58) * 0.04;
-    warmPt.intensity = 0.38 + Math.sin(clock * 0.72) * 0.06;
-    biasGlow.intensity = 0.22 + Math.sin(clock * 0.35) * 0.06;
+    /* ── Ambient — light pulses throttled to every other frame ── */
+    dust.rotation.y = clock * 0.004;
+    if ((Math.floor(clock * 60) & 1) === 0) { // ~30fps update rate for sin() writes
+      // Only animate dust opacity if tier has dust (avoids fighting adaptFPS)
+      if (Q.dustCount[tier] > 0) {
+        dustMt.opacity = 0.10 + Math.sin(clock * 0.58) * 0.04;
+      }
+      // Pulse warm light around its tier baseline
+      warmPt.intensity   = Q.warmIntensity[tier] + Math.sin(clock * 0.72) * 0.06;
+      biasGlow.intensity = 0.22 + Math.sin(clock * 0.35) * 0.06;
+    }
 
     renderer.render(scene, camera);
   }
