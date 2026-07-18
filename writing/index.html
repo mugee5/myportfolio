@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="theme-color" content="#0B0B0B">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Writing — Abdul Mugees</title>
+<meta name="description" content="Essays and field notes on technology, systems, and public impact, by Abdul Mugees.">
+
+<!-- Open Graph / LinkedIn share preview -->
+<meta property="og:title" content="Writing — Abdul Mugees">
+<meta property="og:description" content="Essays and field notes on technology, systems, and public impact.">
+<meta property="og:type" content="website">
+<!-- <meta property="og:image" content="https://yourdomain.com/writing/og-cover.jpg"> -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet"></noscript>
+
+<link rel="stylesheet" href="writing.css">
+</head>
+<body>
+
+<nav class="w-nav">
+  <a href="../index.html" class="w-logo" aria-label="Abdul Mugees — Home">
+    <svg viewBox="814 783 368 582" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+      <g transform="translate(0,2000) scale(0.1,-0.1)" fill="currentColor" stroke="none">
+        <path d="M9859 11989 c-205 -14 -334 -81 -399 -209 -18 -36 -60 -176 -60 -202 0 -4 69 -8 153 -8 l154 0 12 40 c27 91 93 130 218 130 81 0 132 -17 170 -55 27 -27 33 -41 33 -77 0 -82 -28 -96 -255 -128 -201 -28 -267 -44 -337 -82 -120 -64 -180 -169 -182 -318 -1 -112 21 -174 84 -244 68 -74 145 -107 261 -114 156 -9 287 33 387 123 l50 45 7 -32 c4 -18 11 -50 16 -70 l10 -38 169 0 170 0 0 25 c0 14 -6 28 -14 31 -8 3 -23 22 -33 42 -16 34 -18 77 -23 467 l-5 430 -30 54 c-81 146 -265 209 -556 190z"/>
+        <path d="M8290 9075 l0 -1765 365 0 365 0 0 816 c0 449 -5 949 -11 1111 -6 162 -9 296 -7 299 2 2 144 -497 314 -1109 l310 -1112 374 0 374 0 311 1117 c170 614 311 1115 313 1113 2 -2 -2 -205 -8 -451 -6 -247 -10 -748 -8 -1114 l3 -665 365 0 365 0 0 1760 0 1760 -542 3 -541 2 -14 -47 c-8 -27 -149 -533 -313 -1125 -196 -703 -303 -1072 -308 -1060 -5 13 -571 2021 -618 2195 l-10 37 -539 0 -540 0 0 -1765z"/>
+      </g>
+    </svg>
+  </a>
+  <div class="w-nav-links">
+    <a href="../index.html#curiosity">Curiosity</a>
+    <a href="../index.html#experiments">Work</a>
+    <a href="index.html" class="current">Writing</a>
+    <a href="../index.html#footer-cta">Contact</a>
+  </div>
+  <button class="w-hamburger" id="w-hamburger" aria-label="Open menu"><span></span><span></span><span></span></button>
+</nav>
+
+<header class="w-masthead">
+  <div class="w-eyebrow">Field Notes — No. 001 and counting</div>
+  <h1 class="w-title">Writing, <em>occasionally.</em></h1>
+  <p class="w-dek">Essays on technology, systems, and the gap between what a degree teaches and what the work actually asks for. Published here first.</p>
+</header>
+
+<main class="w-list">
+
+  <!-- ============================================================
+       ARTICLE ROW — duplicate this <a> block for every new article.
+       Update: number, meta (date/tags), title, dek, and href.
+       ============================================================ -->
+  <a href="what-makes-products-iconic.html" class="w-row">
+    <div class="w-row-num">No. 001</div>
+    <div class="w-row-main">
+      <div class="w-row-meta">
+        <span>18 Jul 2026</span>
+        <span>·</span>
+        <span>4 min read</span>
+        <span>·</span>
+        <span>Product Strategy</span>
+      </div>
+      <h2 class="w-row-title">What Makes Certain Products Iconic?</h2>
+      <p class="w-row-dek">Popularity, awards, and cutting-edge tech can help — but they're not the secret sauce.</p>
+    </div>
+    <div class="w-row-arrow">→</div>
+  </a>
+
+  <!-- Add more rows above this line as you publish. -->
+
+</main>
+
+<footer class="w-footer">
+  <span>Designed by Abdul Mugees</span>
+  <div class="w-footer-links">
+    <a href="https://www.linkedin.com/in/abdulmugeeswork" target="_blank">LinkedIn</a>
+    <a href="https://medium.com/@abdulmugeeswork" target="_blank">Medium</a>
+    <a href="mailto:abdulmugeeswork@gmail.com">Email</a>
+  </div>
+</footer>
+
+<script>
+document.getElementById('w-hamburger').addEventListener('click', function(){
+  var links = document.querySelector('.w-nav-links');
+  var open = links.style.display === 'flex';
+  links.style.display = open ? 'none' : 'flex';
+  links.style.cssText += open ? '' : 'position:fixed;top:64px;left:0;right:0;background:#0B0B0B;flex-direction:column;padding:1.5rem;gap:1.2rem;border-bottom:1px solid rgba(250,248,244,0.12);';
+});
+</script>
+
+</body>
+</html>
