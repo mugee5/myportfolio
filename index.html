@@ -71,6 +71,67 @@ a,button,.curiosity-card,.exp-card,.writing-item,.resume-btn,.btn-primary,.btn-g
   cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24'%3E%3Cpolygon points='4,2 4,19 8,15 10.5,21 13,20 10.5,14 16,14' fill='%23FF6B35' stroke='%23FAF8F4' stroke-width='1.2' stroke-linejoin='round'/%3E%3C/svg%3E") 4 2, pointer;
 }
 
+/* ─── BOOT OVERLAY ──────────────────────────
+   Full-screen terminal-style opener, plays once per browser
+   session. Styled as a calm app window (macOS-style traffic
+   dots, rounded card) rather than a bare black console, so it
+   reads as "this site is starting up" rather than anything
+   alarming. Skippable via click / tap / keypress. Respects
+   prefers-reduced-motion by not rendering at all. ─── */
+#boot-overlay{
+  position:fixed;inset:0;z-index:5000;
+  background:var(--ink);
+  display:flex;align-items:center;justify-content:center;
+  transition:opacity .18s ease;
+}
+.boot-window{
+  width:min(440px,86vw);
+  background:#0D0D0D;
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:16px;
+  overflow:hidden;
+  box-shadow:0 24px 80px rgba(0,0,0,0.45);
+}
+.boot-titlebar{
+  display:flex;align-items:center;gap:.55rem;
+  padding:.85rem 1.1rem;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+}
+.boot-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.boot-titletext{
+  margin-left:.4rem;
+  font-family:var(--font-mono);font-size:.68rem;
+  color:rgba(255,255,255,0.38);letter-spacing:.04em;
+}
+.boot-body{
+  padding:1.5rem 1.3rem 1.7rem;
+  font-family:var(--font-mono);font-size:.85rem;
+  line-height:2.15;
+}
+.boot-line{color:rgba(255,255,255,0.80);white-space:pre;}
+.boot-line3{color:var(--tangerine);}
+.boot-cursor{
+  display:inline-block;width:7px;height:1em;
+  background:rgba(255,255,255,0.45);
+  margin-left:3px;vertical-align:-2px;
+  opacity:0;
+}
+.boot-line3 .boot-cursor{background:var(--tangerine);}
+.boot-line.typing .boot-cursor{
+  opacity:1;
+  animation:boot-blink 1s steps(1) infinite;
+}
+@keyframes boot-blink{50%{opacity:0;}}
+.boot-check{
+  display:inline-block;margin-left:.6em;
+  color:rgba(63,185,80,0.90);
+  opacity:0;transition:opacity .25s ease;
+}
+.boot-check.show{opacity:1;}
+@media(max-width:480px){
+  .boot-body{font-size:.78rem;padding:1.25rem 1.1rem 1.5rem;}
+}
+
 /* ─── NAV ───────────────────────────────── */
 nav{
   position:fixed;top:0;left:0;right:0;
@@ -1001,6 +1062,102 @@ section{padding:9rem 3rem;max-width:1200px;margin:0 auto;}
 </head>
 <body>
 
+<!-- BOOT OVERLAY — plays once per browser session, skippable, respects reduced-motion -->
+<noscript><style>#boot-overlay{display:none!important;}</style></noscript>
+<div id="boot-overlay">
+  <div class="boot-window" role="status" aria-label="Site loading">
+    <div class="boot-titlebar">
+      <span class="boot-dot" style="background:#FF5F57"></span>
+      <span class="boot-dot" style="background:#FEBC2E"></span>
+      <span class="boot-dot" style="background:#28C840"></span>
+      <span class="boot-titletext">abdulmugees.com</span>
+    </div>
+    <div class="boot-body">
+      <div class="boot-line" id="boot-l1"><span class="boot-text"></span><span class="boot-cursor"></span><span class="boot-check">✓</span></div>
+      <div class="boot-line" id="boot-l2"><span class="boot-text"></span><span class="boot-cursor"></span><span class="boot-check">✓</span></div>
+      <div class="boot-line boot-line3" id="boot-l3"><span class="boot-text"></span><span class="boot-cursor"></span></div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  'use strict';
+  var overlay = document.getElementById('boot-overlay');
+  if (!overlay) return;
+
+  var seen = false;
+  try { seen = sessionStorage.getItem('mugees_boot_seen') === '1'; } catch(e) {}
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function markSeen(){ try { sessionStorage.setItem('mugees_boot_seen', '1'); } catch(e) {} }
+
+  if (seen || reduced) {
+    overlay.style.display = 'none';
+    markSeen();
+    return;
+  }
+
+  document.body.style.overflow = 'hidden';
+
+  var doneTimer = null;
+  function finish(fast){
+    clearTimeout(doneTimer);
+    overlay.style.transition = fast ? 'opacity .12s ease' : 'opacity .2s ease';
+    overlay.style.opacity = '0';
+    document.body.style.overflow = '';
+    markSeen();
+    window.removeEventListener('keydown', skip);
+    window.removeEventListener('pointerdown', skip);
+    setTimeout(function(){
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+    }, fast ? 130 : 210);
+  }
+  function skip(){ finish(true); }
+  window.addEventListener('keydown', skip);
+  window.addEventListener('pointerdown', skip);
+
+  // Character-by-character typewriter — realistic cadence, no scramble/glitch effects.
+  function typeLine(lineEl, text, speed, cb){
+    var textEl = lineEl.querySelector('.boot-text');
+    var chars = Array.from(text);
+    var i = 0;
+    lineEl.classList.add('typing');
+    (function step(){
+      if (i < chars.length) {
+        textEl.textContent += chars[i];
+        i++;
+        setTimeout(step, speed);
+      } else if (cb) {
+        cb();
+      }
+    })();
+  }
+
+  var l1 = document.getElementById('boot-l1');
+  var l2 = document.getElementById('boot-l2');
+  var l3 = document.getElementById('boot-l3');
+  var SPEED = 16; // ms per character — quick but legible, not frantic
+
+  typeLine(l1, 'curiosity: mounted', SPEED, function(){
+    l1.classList.remove('typing');
+    l1.querySelector('.boot-check').classList.add('show');
+    setTimeout(function(){
+      typeLine(l2, 'systems: awake', SPEED, function(){
+        l2.classList.remove('typing');
+        l2.querySelector('.boot-check').classList.add('show');
+        setTimeout(function(){
+          typeLine(l3, 'imagination \u2192 implementation', SPEED, function(){
+            // l3 keeps its blinking cursor through the hold — a calm,
+            // familiar "still here" cue rather than an abrupt stop.
+            doneTimer = setTimeout(function(){ finish(false); }, 480);
+          });
+        }, 110);
+      });
+    }, 110);
+  });
+})();
+</script>
+
 <!-- PROGRESS BAR -->
 <div id="progress"></div>
 
@@ -1096,7 +1253,6 @@ m119 -36 c13 -12 23 -30 23 -40 0 -16 -9 -18 -80 -18 -90 0 -100 11 -55 55 31
   </div>
   <div class="nav-right">
     <a href="#experiments" class="nav-link">Work</a>
-    <a href="writing/index.html" class="nav-link">Writing</a>
     <a href="#footer-cta" class="nav-link">Contact</a>
     <a href="#" onclick="openResume();return false;" class="resume-btn magnetic" id="resume-btn"><span>Resume ↓</span></a>
   </div>
@@ -1110,7 +1266,6 @@ m119 -36 c13 -12 23 -30 23 -40 0 -16 -9 -18 -80 -18 -90 0 -100 11 -55 55 31
 <div class="mobile-menu" id="mobile-menu" role="dialog" aria-modal="true" aria-label="Navigation">
   <a href="#curiosity" class="m-link" onclick="closeMobileMenu()">Curiosity</a>
   <a href="#experiments" class="m-link" onclick="closeMobileMenu()">Work</a>
-  <a href="writing/index.html" class="m-link">Writing</a>
   <a href="#footer-cta" class="m-link" onclick="closeMobileMenu()">Contact</a>
   <a href="#" onclick="openResume();closeMobileMenu();return false;" class="m-resume">Resume ↓</a>
 </div>
@@ -1298,8 +1453,8 @@ m119 -36 c13 -12 23 -30 23 -40 0 -16 -9 -18 -80 -18 -90 0 -100 11 -55 55 31
   <div class="section-label reveal">Currently</div>
   <div class="currently-grid">
     <div class="currently-copy">
-      <h2 class="section-heading reveal">Then I started building.</h2>
-      <p class="reveal">Midān is a product-led software company — systems built for the people using them, not the institutions procuring them. I started it to close that gap.</p>
+      <h2 class="section-heading reveal">Not just building.<br>Building together.</h2>
+      <p class="reveal">Midān is an independent technology, knowledge and community initiative. We build, research, teach and publish. Creating useful things and making knowledge more accessible along the way.</p>
       <a href="https://midan.in" target="_blank" rel="noopener" class="btn-primary magnetic reveal"><span>Visit Midān →</span></a>
     </div>
     <div class="currently-products">
@@ -1356,8 +1511,8 @@ m119 -36 c13 -12 23 -30 23 -40 0 -16 -9 -18 -80 -18 -90 0 -100 11 -55 55 31
     <span class="marquee-item"><span class="marquee-dot"></span>Climate</span>
     <span class="marquee-item"><span class="marquee-dot"></span>Community</span>
     <span class="marquee-item"><span class="marquee-dot"></span>Storytelling</span>
-    <span class="marquee-item"><span class="marquee-dot"></span>Design Systems</span>
-    <span class="marquee-item"><span class="marquee-dot"></span>Human-Centered Technology</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Cloud Systems</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Systems Reliability</span>
     <span class="marquee-item"><span class="marquee-dot"></span>Faith & Culture</span>
     <span class="marquee-item"><span class="marquee-dot"></span>Architecture of Trust</span>
     <span class="marquee-item"><span class="marquee-dot"></span>AI Interfaces</span>
@@ -1367,8 +1522,8 @@ m119 -36 c13 -12 23 -30 23 -40 0 -16 -9 -18 -80 -18 -90 0 -100 11 -55 55 31
     <span class="marquee-item"><span class="marquee-dot"></span>Climate</span>
     <span class="marquee-item"><span class="marquee-dot"></span>Community</span>
     <span class="marquee-item"><span class="marquee-dot"></span>Storytelling</span>
-    <span class="marquee-item"><span class="marquee-dot"></span>Design Systems</span>
-    <span class="marquee-item"><span class="marquee-dot"></span>Human-Centered Technology</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Cloud Systems</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Systems Reliability</span>
     <span class="marquee-item"><span class="marquee-dot"></span>Faith & Culture</span>
     <span class="marquee-item"><span class="marquee-dot"></span>Architecture of Trust</span>
   </div>
@@ -1402,14 +1557,12 @@ m119 -36 c13 -12 23 -30 23 -40 0 -16 -9 -18 -80 -18 -90 0 -100 11 -55 55 31
         <a href="#curiosity">Areas of Curiosity</a>
         <a href="#experiments">Experiments</a>
         <a href="#currently">Currently</a>
-        <a href="writing/index.html">Writing</a>
       </div>
       <div class="footer-col reveal" style="transition-delay:.16s">
         <div class="footer-col-label">Open to</div>
-        <span>Product Roles</span>
-        <span>UX Research</span>
-        <span>Consumer Technology Advisory</span>
         <span>Infrastructure & Platform Roles</span>
+        <span>Cloud & DevOps</span>
+        <span>Systems Reliability</span>
         <span>Conversations</span>
         <span>Collaborations</span>
       </div>
@@ -1683,6 +1836,7 @@ footerObs.observe(document.getElementById('footer-cta'));
      FPS sampler runs for 2.5s and can drop Mobile High → Base.
      It never drops below Base — that's the floor.
      ═══════════════════════════════════════════════════════ */
+  const BOOT_DURATION = 2.6; // seconds — monitor boot sequence, plays once on load
   const isMobile = window.matchMedia('(max-width:768px)').matches
                 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   const prefersReduced = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
@@ -2440,71 +2594,79 @@ footerObs.observe(document.getElementById('footer-cta'));
       cornerAccents();
     }
 
-    // ─ Screen 1: recruiter easter egg (revealed on hover) ─
-    function drawRecruiter(cursorOn) {
-      chrome('~/workspace/mugees — you found this');
-      promptLine(80, 'sudo read_closely');
-      ctx.font = '400 13px monospace';
-      ctx.fillStyle = palette.dim;
-      ctx.fillText('// reading the source? same energy I bring to a codebase.', 24, 106);
-      ctx.shadowColor = '#58A6FF'; ctx.shadowBlur = 34;
-      ctx.fillStyle = '#E6EDF3'; ctx.font = 'bold 40px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText('Reading this closely?', 376, 176);
-      ctx.fillStyle = 'rgba(255,107,53,0.95)';
-      ctx.fillText('Maybe hire me.', 376, 226);
-      ctx.shadowBlur = 0;
-      ctx.font = '400 15px monospace'; ctx.fillStyle = palette.accent;
-      ctx.fillText('( click the screen for more )', 376, 262);
-      ctx.textAlign = 'left';
-      divider(292);
-      promptLine(330, 'echo $CONTACT');
-      ctx.fillStyle = palette.text; ctx.font = '400 14px monospace';
-      ctx.fillText('abdulmugeeswork@gmail.com', 24, 356);
-      promptLine(392, '');
-      blinkCursor(210, 392, cursorOn);
-      cornerAccents();
-    }
-
-    // ─ Screen 2: ls — a playful directory listing ─
+    // ─ Screen 1: ls — a playful directory listing ─
     function drawLs(cursorOn) {
       chrome('~/workspace/mugees — ls -la');
       promptLine(80, 'ls ~/brain');
       ctx.font = '400 14px monospace';
       const rows = [
-        ['drwx', 'curiosity/',        'always full'],
+        ['drwx', 'curiosity/',        'always mounted'],
         ['drwx', 'half-built-ideas/',  '42 items'],
         ['-rw-', 'mission.txt',         'help ideas move'],
-        ['-rw-', 'coffee.log',          'critically low'],
+        ['-rw-', 'uptime.log',          'counting up'],
         ['drwx', 'things-i-shipped/',  'see below ↓'],
-        ['-rwx', 'hire_me.sh',          'executable'],
+        ['-rwx', 'deploy.sh',           'idempotent'],
       ];
       let y = 116;
       rows.forEach(([perm, name, note]) => {
         ctx.fillStyle = palette.dim;   ctx.fillText(perm, 24, y);
-        ctx.fillStyle = (name === 'hire_me.sh') ? 'rgba(255,107,53,0.95)' : palette.accent;
+        ctx.fillStyle = (name === 'deploy.sh') ? 'rgba(255,107,53,0.95)' : palette.accent;
         ctx.fillText(name, 96, y);
         ctx.fillStyle = palette.host;  ctx.fillText(note, 340, y);
         y += 30;
       });
       divider(y + 2);
-      promptLine(y + 40, './hire_me.sh');
+      promptLine(y + 40, './deploy.sh');
       ctx.fillStyle = 'rgba(63,185,80,0.85)'; ctx.font = '400 13px monospace';
-      ctx.fillText('> permission granted. scroll down to talk.', 24, y + 64);
+      ctx.fillText('> systems nominal. scroll to see the build.', 24, y + 64);
       blinkCursor(210, y + 96 > 410 ? 408 : y + 96, cursorOn);
       cornerAccents();
     }
 
-    const screens = [drawWhoami, drawRecruiter, drawLs];
+    // ─ Boot sequence: plays once on load, then settles into whoami ─
+    const bootLines = [
+      { tag: '[BOOT]', msg: 'initializing workstation...', color: () => palette.dim,             at: 0.05 },
+      { tag: '[ OK ]', msg: 'mounting ~/workspace',         color: () => 'rgba(63,185,80,0.85)',   at: 0.20 },
+      { tag: '[ OK ]', msg: 'network: up',                  color: () => 'rgba(63,185,80,0.85)',   at: 0.36 },
+      { tag: '[ OK ]', msg: 'cloud: connected',              color: () => 'rgba(63,185,80,0.85)',   at: 0.52 },
+      { tag: '[ OK ]', msg: 'reliability checks: passed',    color: () => 'rgba(63,185,80,0.85)',   at: 0.68 },
+      { tag: '[ OK ]', msg: 'loading profile: mugees',       color: () => 'rgba(63,185,80,0.85)',   at: 0.82 },
+    ];
+    function drawBoot(progress, cursorOn) {
+      chrome('~/workspace/mugees — boot');
+      ctx.font = '400 14px monospace';
+      let y = 90, lastY = null;
+      bootLines.forEach(line => {
+        if (progress < line.at) return;
+        ctx.fillStyle = line.color(); ctx.fillText(line.tag, 24, y);
+        ctx.fillStyle = palette.text; ctx.fillText(line.msg, 96, y);
+        lastY = y; y += 30;
+      });
+      if (progress >= 0.92) {
+        divider(y + 6);
+        ctx.fillStyle = palette.accent; ctx.font = '400 14px monospace';
+        ctx.fillText('booting into whoami...', 24, y + 38);
+        lastY = y + 38;
+      }
+      if (lastY !== null) blinkCursor(210, lastY, cursorOn);
+      cornerAccents();
+    }
+
+    const screens = [drawWhoami, drawLs];
     // Expose state on the group so the render loop & handlers can drive it.
     g.userData.screenIndex = 0;
+    g.userData.bootDone = false;
     g.userData.redrawScreen = function (cursorOn) {
-      screens[g.userData.screenIndex](cursorOn);
+      if (!g.userData.bootDone) {
+        drawBoot(Math.min(clock / BOOT_DURATION, 1), cursorOn);
+      } else {
+        screens[g.userData.screenIndex](cursorOn);
+      }
       screenTex.needsUpdate = true;
     };
 
-    // initial paint
-    drawWhoami(true);
+    // initial paint — boot state, frame zero
+    drawBoot(0, true);
 
     const screenTex = new THREE.CanvasTexture(screenCvs);
     const screenTexMat = new THREE.MeshStandardMaterial({
@@ -3196,9 +3358,9 @@ footerObs.observe(document.getElementById('footer-cta'));
   canvas.addEventListener('click', () => {
     if (hoveredGroup) {
       clickPulses.set(hoveredGroup, clock);
-      // Clicking the monitor cycles through its hidden screens.
-      if (hoveredGroup.userData.isMonitor) {
-        const n = 3; // drawWhoami / drawRecruiter / drawLs
+      // Clicking the monitor cycles through its screens, once boot has finished.
+      if (hoveredGroup.userData.isMonitor && hoveredGroup.userData.bootDone) {
+        const n = 2; // drawWhoami / drawLs
         hoveredGroup.userData.screenIndex =
           (hoveredGroup.userData.screenIndex + 1) % n;
         hoveredGroup.userData.userDriven = true;
@@ -3209,14 +3371,12 @@ footerObs.observe(document.getElementById('footer-cta'));
     }
   });
 
-  /* ─── IDLE AUTO-NUDGE: screen 0 → 1 ──────────────────────
+  /* ─── IDLE AUTO-NUDGE: whoami → ls ──────────────────────
    * If the visitor never clicks the monitor, gently reveal the
-   * second screen after ~9s so the display isn't static. This only
-   * ever moves between the first and second screens — it never
-   * advances to the third screen, and it stops the moment the user
-   * clicks (userDriven). */
+   * ls screen after ~9s (once boot has finished) so the display
+   * isn't static. Stops the moment the user clicks (userDriven). */
   let autoScreenTimer = setTimeout(function autoNudge() {
-    if (!monitor.userData.userDriven && monitor.userData.screenIndex === 0) {
+    if (monitor.userData.bootDone && !monitor.userData.userDriven && monitor.userData.screenIndex === 0) {
       monitor.userData.screenIndex = 1;
       monitor.userData.screenDirty = true;
     }
@@ -3345,14 +3505,22 @@ footerObs.observe(document.getElementById('footer-cta'));
     /* ── Monitor glow pulse ─────────────────────────────── */
     monitorGlow.intensity = 0.75 + Math.sin(clock * 1.4) * 0.10;
 
-    /* ── Monitor screen: blinking cursor + easter-egg redraw ─ */
+    /* ── Monitor screen: boot sequence, then blinking cursor + screen redraw ─ */
     {
       const cursorOn = (Math.floor(clock * 1.6) % 2) === 0;
-      if (monitor.userData.redrawScreen &&
-          (cursorOn !== monitor.userData._lastCursor || monitor.userData.screenDirty)) {
-        monitor.userData.redrawScreen(cursorOn);
-        monitor.userData._lastCursor = cursorOn;
-        monitor.userData.screenDirty = false;
+      if (monitor.userData.redrawScreen) {
+        if (!monitor.userData.bootDone) {
+          // Boot animates in every frame regardless of cursor blink state.
+          monitor.userData.redrawScreen(cursorOn);
+          if (clock >= BOOT_DURATION) {
+            monitor.userData.bootDone = true;
+            monitor.userData.screenDirty = true; // force a clean whoami repaint next tick
+          }
+        } else if (cursorOn !== monitor.userData._lastCursor || monitor.userData.screenDirty) {
+          monitor.userData.redrawScreen(cursorOn);
+          monitor.userData._lastCursor = cursorOn;
+          monitor.userData.screenDirty = false;
+        }
       }
     }
 
